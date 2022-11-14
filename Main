@@ -1,0 +1,339 @@
+local Player = game.Players.LocalPlayer
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+
+local FlashOn = false
+local FlashLightEnabled = false
+
+local NormalFOV = game.Workspace.Camera.FieldOfView
+local ScopeCameraCFrame
+local ScopeDistance = 80
+local Scoping = false
+local ScopingDebounce = false
+local ScopeEnabled = false
+
+local CanSwitch = true
+local Running = false
+
+local SFX = {
+	FlashLight = {
+		On = "rbxassetid://198914875";
+		Off = "rbxassetid://198915223";
+		Equip = "rbxassetid://7804819456";
+		UnEquip = "rbxassetid://3834495137"
+	};
+	Scope = {
+		Equip = "rbxassetid://7804819456";
+		UnEquip = "rbxassetid://3834495137"
+	}
+}
+
+local function Create(typ)
+	if typ == "FlashLight" then
+		local FlashLight = Instance.new("Part", workspace.Camera)
+		FlashLight.Name = "FlashLight"
+		FlashLight.CFrame = workspace.Camera.CFrame * CFrame.new(0.4, -1.3, 0.2)
+		FlashLight.Size = Vector3.new(1.604, 0.611, 0.611)
+		FlashLight.CanCollide = false
+		FlashLight.CanQuery = false
+		FlashLight.CanTouch = false
+		FlashLight.Anchored = true
+		FlashLight.CastShadow = true
+		FlashLight.Material = Enum.Material.Metal
+		local Mesh = Instance.new("SpecialMesh", FlashLight)
+		Mesh.Name = "Mesh"
+		Mesh.MeshId = "rbxassetid://11549758892"
+		Mesh.TextureId = "rbxassetid://11549759145"
+		local SpotLight = Instance.new("SpotLight", FlashLight)
+		SpotLight.Angle = 45
+		if FlashOn == true then
+			game:GetService("TweenService"):Create(workspace.Camera:FindFirstChild("FlashLight").SpotLight, TweenInfo.new(0.25,Enum.EasingStyle.Sine,Enum.EasingDirection.InOut,0,false,0), {
+				Brightness = 2.9
+			}):Play()
+		else
+			SpotLight.Brightness = 0
+		end
+		SpotLight.Color = Color3.fromRGB(255,255,255)
+		SpotLight.Face = Enum.NormalId.Front
+		SpotLight.Enabled = true
+		SpotLight.Range = 60
+		SpotLight.Shadows = true
+	elseif typ == "Scope" then
+		local Scope = Instance.new("Part", workspace.Camera)
+		Scope.Name = "Scope"
+		Scope.CFrame = workspace.Camera.CFrame * CFrame.new(0.4, -1.3, 0.2)
+		Scope.Size = Vector3.new(0.279, 0.278, 0.68)
+		Scope.CanCollide = false
+		Scope.CanQuery = false
+		Scope.CanTouch = false
+		Scope.Anchored = true
+		Scope.CastShadow = true	
+		Scope.Material = Enum.Material.Metal
+		Scope.Color = Color3.fromRGB(119, 119, 120)
+		local Mesh = Instance.new('SpecialMesh', Scope)
+		Mesh.Name = "Mesh"
+		Mesh.MeshId = "rbxassetid://11552251682"
+	end
+end
+
+local function PlaySound(id, volume, speed, looped)
+	local SoundFX = Instance.new("Sound", workspace)
+	SoundFX.Name = "SoundFX"
+	SoundFX.Volume = volume
+	SoundFX.SoundId = id
+	SoundFX.Looped = looped
+	SoundFX.PlaybackSpeed = speed
+	SoundFX:Play()
+	coroutine.resume(coroutine.create(function()
+		wait(SoundFX.TimeLength + 1)
+		SoundFX:Destroy()
+	end))
+end
+
+coroutine.resume(coroutine.create(function()
+	local FlashUI = Instance.new("ScreenGui")
+	local DarkCorners = Instance.new("ImageLabel")
+
+	FlashUI.Name = "FlashUI"
+	FlashUI.Parent = Player.PlayerGui
+	FlashUI.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+	FlashUI.DisplayOrder = 999999999
+	FlashUI.ResetOnSpawn = false
+	FlashUI.Enabled = true
+
+	DarkCorners.Name = "DarkCorners"
+	DarkCorners.Parent = FlashUI
+	DarkCorners.BorderSizePixel = 0
+	DarkCorners.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+	DarkCorners.BackgroundTransparency = 0.750
+	DarkCorners.Position = UDim2.new(-0.110438339, 0, -0.198092878, 0)
+	DarkCorners.Size = UDim2.new(1.21946907, 0, 1.27317882, 0)
+	DarkCorners.Image = "rbxassetid://11552516626"
+
+	DarkCorners.ImageTransparency = 1
+	DarkCorners.BackgroundTransparency = 1
+end))
+
+UserInputService.InputBegan:Connect(function(input, gameProcessedEvent)
+	if not gameProcessedEvent then
+		if input.KeyCode == Enum.KeyCode.L then
+			if CanSwitch == true and ScopeEnabled == false then
+				if FlashLightEnabled == false then
+					CanSwitch = false
+					PlaySound(SFX.FlashLight.Equip, 1.75, 1, false)
+					coroutine.resume(coroutine.create(function()
+						wait(0.45)
+						if workspace.Camera:FindFirstChild("FlashLight") then
+							FlashLightEnabled = true
+						else
+							Create("FlashLight")
+							FlashLightEnabled = true
+						end
+						wait(0.45)
+						CanSwitch = true
+					end))
+				else
+					CanSwitch = false
+					FlashLightEnabled = false
+					PlaySound(SFX.FlashLight.UnEquip, 1.75, 1, false)
+					game:GetService("TweenService"):Create(workspace.Camera:FindFirstChild("FlashLight").SpotLight, TweenInfo.new(0.25,Enum.EasingStyle.Sine,Enum.EasingDirection.InOut,0,false,0), {
+						Brightness = 0
+					}):Play()
+					coroutine.resume(coroutine.create(function()
+						wait(0.45)
+						if workspace.Camera:FindFirstChild("FlashLight") then
+							workspace.Camera:FindFirstChild("FlashLight"):Destroy()
+						end
+						wait(0.45)
+						CanSwitch = true
+					end))
+				end
+			end
+		elseif input.KeyCode == Enum.KeyCode.K then
+			if CanSwitch == true and FlashLightEnabled == false then
+				if ScopeEnabled == false then
+					CanSwitch = false
+					PlaySound(SFX.Scope.Equip, 1.75, 1, false)
+					coroutine.resume(coroutine.create(function()
+						wait(0.45)
+						if workspace.Camera:FindFirstChild("FlashLight") then
+							ScopeEnabled = true
+						else
+							Create("Scope")
+							ScopeEnabled = true
+						end
+						wait(0.45)
+						CanSwitch = true
+					end))
+				else
+					CanSwitch = false
+					ScopeEnabled = false
+					if Scoping == true then
+						ScopingDebounce = true
+						Scoping = false
+						ScopeCameraCFrame = nil
+						game:GetService("TweenService"):Create(game.Workspace.Camera, TweenInfo.new(.4, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, 0, false, 0), {
+							FieldOfView = NormalFOV
+						}):Play()
+						Player.Character.Humanoid.RootPart.Anchored = false
+						Player.Character.Humanoid.AutoRotate = true
+						workspace.Camera.CameraType = Enum.CameraType.Custom
+						game:GetService("TweenService"):Create(Player.PlayerGui:FindFirstChild("FlashUI").DarkCorners, TweenInfo.new(.4, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, 0, false, 0), {
+							ImageTransparency = 1;
+							BackgroundTransparency = 1;
+						}):Play()
+						coroutine.resume(coroutine.create(function()
+							wait(.45)
+							ScopingDebounce = false
+						end))
+					end
+					PlaySound(SFX.Scope.UnEquip, 1.75, 1, false)
+					coroutine.resume(coroutine.create(function()
+						wait(0.45)
+						if workspace.Camera:FindFirstChild("Scope") then
+							workspace.Camera:FindFirstChild("Scope"):Destroy()
+						end
+						wait(0.45)
+						CanSwitch = true
+					end))
+				end
+			end
+		elseif input.UserInputType == Enum.UserInputType.MouseButton2 then
+			if FlashLightEnabled == true then
+				if FlashOn == true then
+					FlashOn = false
+					PlaySound(SFX.FlashLight.Off, 0.75, 1, false)
+					game:GetService("TweenService"):Create(workspace.Camera:FindFirstChild("FlashLight").SpotLight, TweenInfo.new(0.25,Enum.EasingStyle.Sine,Enum.EasingDirection.InOut,0,false,0), {
+						Brightness = 0
+					}):Play()
+				else
+					FlashOn = true
+					PlaySound(SFX.FlashLight.On, 0.75, 1, false)
+					game:GetService("TweenService"):Create(workspace.Camera:FindFirstChild("FlashLight").SpotLight, TweenInfo.new(0.25,Enum.EasingStyle.Sine,Enum.EasingDirection.InOut,0,false,0), {
+						Brightness = 2.9
+					}):Play()
+				end
+			elseif ScopeEnabled == true then
+				if ScopingDebounce == false then
+					if Scoping == false then
+						ScopingDebounce = true
+						Scoping = true
+						NormalFOV = game.Workspace.Camera.FieldOfView
+						Player.Character.Humanoid.RootPart.Anchored = true
+						ScopeCameraCFrame = game.Workspace.Camera.CFrame
+						Player.Character.Humanoid.AutoRotate = false
+						workspace.Camera.CameraType = Enum.CameraType.Scriptable
+						game:GetService("TweenService"):Create(Player.PlayerGui:FindFirstChild("FlashUI").DarkCorners, TweenInfo.new(.4, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, 0, false, 0), {
+							ImageTransparency = 0;
+							BackgroundTransparency = 0.750;
+						}):Play()
+						coroutine.resume(coroutine.create(function()
+							wait(.45)
+							ScopingDebounce = false
+						end))
+					else
+						ScopingDebounce = true
+						Scoping = false
+						ScopeCameraCFrame = nil
+						game:GetService("TweenService"):Create(game.Workspace.Camera, TweenInfo.new(.4, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, 0, false, 0), {
+							FieldOfView = NormalFOV
+						}):Play()
+						Player.Character.Humanoid.RootPart.Anchored = false
+						Player.Character.Humanoid.AutoRotate = true
+						workspace.Camera.CameraType = Enum.CameraType.Custom
+						game:GetService("TweenService"):Create(Player.PlayerGui:FindFirstChild("FlashUI").DarkCorners, TweenInfo.new(.4, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, 0, false, 0), {
+							ImageTransparency = 1;
+							BackgroundTransparency = 1;
+						}):Play()
+						coroutine.resume(coroutine.create(function()
+							wait(.45)
+							ScopingDebounce = false
+						end))
+					end
+				end
+			else
+				-- Nothing was Equipped.
+			end
+		end
+	end
+end)
+
+UserInputService.InputChanged:Connect(function(input, gameProcessedEvent)
+	if not gameProcessedEvent then
+		if input.UserInputType == Enum.UserInputType.MouseWheel then
+			if input.Position.Z > 0 then
+				ScopeDistance += 2.5
+				if ScopeDistance > 260 then
+					ScopeDistance -= 2.5
+				end
+			else
+				ScopeDistance -= 2.5
+				if ScopeDistance < 10 then
+					ScopeDistance += 2.5
+				end
+			end
+		end
+	end
+end)
+
+RunService.RenderStepped:Connect(function()
+	if Player.Character.Humanoid.MoveDirection.Magnitude > 0 then
+		Running = true
+	else
+		Running = false
+	end
+	coroutine.resume(coroutine.create(function()
+		if workspace.Camera:FindFirstChild("FlashLight") then else return end
+		local FlashLight = workspace.Camera:FindFirstChild("FlashLight")
+		if Running == true then
+			if FlashLightEnabled == true then
+				FlashLight.CFrame = FlashLight.CFrame:Lerp(workspace.Camera.CFrame * CFrame.new(0.7, -0.5, -0.7), .6)
+			else
+				FlashLight.CFrame = FlashLight.CFrame:Lerp(workspace.Camera.CFrame * CFrame.new(0.4, -1.3, 0.2), .6)
+			end
+		else
+			if FlashLightEnabled == true then
+				FlashLight.CFrame = FlashLight.CFrame:Lerp(workspace.Camera.CFrame * CFrame.new(0.7, -0.5, -0.7), .2)
+			else
+				FlashLight.CFrame = FlashLight.CFrame:Lerp(workspace.Camera.CFrame * CFrame.new(0.4, -1.3, 0.2), .2)
+			end
+		end
+	end))
+	coroutine.resume(coroutine.create(function()
+		if workspace.Camera:FindFirstChild("Scope") then else return end
+		local Scope = workspace.Camera:FindFirstChild("Scope")
+		if Running == true then
+			if Scoping == true then
+				game.Workspace.Camera.CFrame = game.Workspace.Camera.CFrame:Lerp(ScopeCameraCFrame * CFrame.new(0, 0, -ScopeDistance), .1)
+				game.Workspace.Camera.FieldOfView = NormalFOV + (-ScopeDistance/1.5)
+				if ScopeEnabled == true then
+					Scope.CFrame = Player.Character.HumanoidRootPart.CFrame * CFrame.new(0.4, 0, 0.2)
+				else
+					Scope.CFrame = Player.Character.HumanoidRootPart.CFrame * CFrame.new(0.4, 0, 0.2)
+				end
+			else
+				if ScopeEnabled == true then
+					Scope.CFrame = Scope.CFrame:Lerp(workspace.Camera.CFrame * CFrame.new(0.7, -0.5, -0.7), .6)
+				else
+					Scope.CFrame = Scope.CFrame:Lerp(workspace.Camera.CFrame * CFrame.new(0.4, -1.3, 0.2), .6)
+				end
+			end
+		else
+			if Scoping == true then
+				game.Workspace.Camera.CFrame = game.Workspace.Camera.CFrame:Lerp(ScopeCameraCFrame * CFrame.new(0, 0, -ScopeDistance), .1)
+				game.Workspace.Camera.FieldOfView = NormalFOV + (-ScopeDistance/1.5)
+				if ScopeEnabled == true then
+					Scope.CFrame = Player.Character.HumanoidRootPart.CFrame * CFrame.new(0.4, 0, 0.2)
+				else
+					Scope.CFrame = Player.Character.HumanoidRootPart.CFrame * CFrame.new(0.4, 0, 0.2)
+				end
+			else
+				if ScopeEnabled == true then
+					Scope.CFrame = Scope.CFrame:Lerp(workspace.Camera.CFrame * CFrame.new(0.7, -0.5, -0.7), .2)
+				else
+					Scope.CFrame = Scope.CFrame:Lerp(workspace.Camera.CFrame * CFrame.new(0.4, -1.3, 0.2), .2)
+				end
+			end
+		end
+	end))
+end)
