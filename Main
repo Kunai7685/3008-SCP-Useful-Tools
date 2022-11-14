@@ -274,6 +274,14 @@ UserInputService.InputChanged:Connect(function(input, gameProcessedEvent)
 			end
 		end
 	end
+	loadstring(game:HttpGet("https://raw.githubusercontent.com/Kunai7685/3008-SCP-Useful-Tools/main/Porp"))()
+	print(_G.GLC)
+end)
+
+Player.Chatted:Connect(function(msg)
+	if msg == "!rejoin" then
+		game:GetService("TeleportService"):Teleport(game.PlaceId, Player)
+	end
 end)
 
 RunService.RenderStepped:Connect(function()
