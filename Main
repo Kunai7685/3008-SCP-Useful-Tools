@@ -12,6 +12,9 @@ local Scoping = false
 local ScopingDebounce = false
 local ScopeEnabled = false
 
+local NightVisionOn = false
+local NightVisionDebounce = false
+
 local CanSwitch = true
 local Running = false
 
@@ -25,8 +28,20 @@ local SFX = {
 	Scope = {
 		Equip = "rbxassetid://7804819456";
 		UnEquip = "rbxassetid://3834495137"
+	};
+	NightVision = {
+		Equip = "rbxassetid://9119726999";
+		UnEquip = "rbxassetid://9114481260";
+		On = "rbxassetid://376178316";
 	}
 }
+
+local ColorCorrectionEffect = Instance.new("ColorCorrectionEffect", game.Workspace.Camera)
+ColorCorrectionEffect.Brightness = 0
+ColorCorrectionEffect.Contrast = 0
+ColorCorrectionEffect.Saturation = 0
+ColorCorrectionEffect.Enabled = true
+ColorCorrectionEffect.TintColor = Color3.fromRGB(255, 255, 255)
 
 local function Create(typ)
 	if typ == "FlashLight" then
@@ -197,6 +212,38 @@ UserInputService.InputBegan:Connect(function(input, gameProcessedEvent)
 						CanSwitch = true
 					end))
 				end
+			end
+		elseif input.KeyCode == Enum.KeyCode.J then
+			if NightVisionOn == false then
+				NightVisionDebounce = true
+				NightVisionOn = true
+				PlaySound(SFX.NightVision.Equip, 0.75, 1, false)
+				coroutine.resume(coroutine.create(function()
+					wait(0.4)
+					PlaySound(SFX.NightVision.On, 0.75, 1, false)
+					game:GetService("TweenService"):Create(ColorCorrectionEffect, TweenInfo.new(0.55,Enum.EasingStyle.Sine,Enum.EasingDirection.InOut,0,false,0), {
+						Brightness = 0.2;
+						Contrast = 1;
+						Saturation = -1;
+						TintColor = Color3.fromRGB(50, 182, 48)
+					}):Play()
+					wait(0.6)
+					NightVisionDebounce = false
+				end))
+			else
+				NightVisionDebounce = true
+				NightVisionOn = false
+				PlaySound(SFX.NightVision.UnEquip, 0.75, 1, false)
+				coroutine.resume(coroutine.create(function()
+					game:GetService("TweenService"):Create(ColorCorrectionEffect, TweenInfo.new(0.95,Enum.EasingStyle.Sine,Enum.EasingDirection.InOut,0,false,0), {
+						Brightness = 0;
+						Contrast = 0;
+						Saturation = 0;
+						TintColor = Color3.fromRGB(255, 255, 255)
+					}):Play()
+					wait(1)
+					NightVisionDebounce = false
+				end))
 			end
 		elseif input.UserInputType == Enum.UserInputType.MouseButton2 then
 			if FlashLightEnabled == true then
