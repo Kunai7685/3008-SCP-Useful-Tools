@@ -223,7 +223,7 @@ UserInputService.InputBegan:Connect(function(input, gameProcessedEvent)
 					PlaySound(SFX.NightVision.On, 0.75, 1, false)
 					game:GetService("TweenService"):Create(ColorCorrectionEffect, TweenInfo.new(0.55,Enum.EasingStyle.Sine,Enum.EasingDirection.InOut,0,false,0), {
 						Brightness = 0.2;
-						Contrast = 1;
+						Contrast = -0.2;
 						Saturation = -1;
 						TintColor = Color3.fromRGB(50, 182, 48)
 					}):Play()
